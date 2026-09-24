@@ -1,6 +1,7 @@
 package com.example.ImagemPecas.application.images;
 
 import com.example.ImagemPecas.domain.entity.Image;
+import com.example.ImagemPecas.domain.enums.ImageExtension;
 import com.example.ImagemPecas.domain.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/v1/images")
@@ -60,9 +62,32 @@ public class ImagesController {
 
         return new ResponseEntity<>(image.getFile(), headers, HttpStatus.OK);
 }
+
+
+//localhost:8080/v1/images?extension=PNG&query=Nature
+
+    @GetMapping
+    public ResponseEntity<List<ImageDTO>> search (
+            @RequestParam(value = "extension", required = false) String extension,
+            @RequestParam(value = "query",required = false) String query){
+
+
+        //var result = service.search(ImageExtension.valueOf(extension), query);
+        var result = service.search(ImageExtension.ofName(extension), query);
+        var images = result.stream().map(image ->{
+            var url = buildImageURL(image);
+            return mapper.imageToDTO(image,url.toString());
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(images);
+    }
+
+    //Localhost:8080/v1/images/xyxxyxyyxyxyxyxy
     private URI buildImageURL(Image image){
         String imagePath = "/" + image.getId();
-        return ServletUriComponentsBuilder.fromCurrentRequest().path(imagePath).build().toUri();
+        //return ServletUriComponentsBuilder.fromCurrentRequest().path(imagePath).build().toUri();
+        return ServletUriComponentsBuilder.fromCurrentRequestUri().path(imagePath).build().toUri();
     }
+
+
 }
 
